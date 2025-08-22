@@ -1,0 +1,54 @@
+/* Estilos específicos para la pantalla de resultado */
+#result-screen .panel {
+    max-width: 450px;
+}
+
+#result-form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+#result-form .input-group {
+    margin-bottom: 0;
+}
+
+/* Estilos especiales para los campos de resultado y observación */
+#result,
+#observation {
+    min-height: 120px;
+    font-size: 16px;
+    line-height: 1.5;
+}
+
+/* Contador de caracteres */
+.char-counter {
+    font-size: 12px;
+    color: #666;
+    text-align: right;
+    margin-top: 4px;
+}
+
+.char-counter.warning {
+    color: #ff9800;
+}
+
+.char-counter.error {
+    color: #f44336;
+}
+
+/* Animación especial para esta pantalla */
+#result-screen .panel {
+    animation: slideInFromBottom 0.5s ease-out;
+}
+
+@keyframes slideInFromBottom {
+    from {
+        opacity: 0;
+        transform: translateY(40px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}

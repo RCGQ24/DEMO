@@ -1,0 +1,177 @@
+/* Estilos específicos para la pantalla de descripción */
+.attachments-area {
+    margin: 20px 0;
+    min-height: 60px;
+}
+
+#attachments-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.attachment-item {
+    background-color: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    animation: slideInRight 0.3s ease-out;
+}
+
+.attachment-item .icon {
+    font-size: 24px;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    background-color: #f5f5f5;
+}
+
+.attachment-item .info {
+    flex: 1;
+}
+
+.attachment-item .name {
+    font-weight: 500;
+    color: #333;
+    margin-bottom: 4px;
+}
+
+.attachment-item .size {
+    font-size: 12px;
+    color: #666;
+}
+
+.attachment-item .remove {
+    background: none;
+    border: none;
+    color: #f44336;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 4px;
+    transition: background-color 0.3s ease;
+}
+
+.attachment-item .remove:hover {
+    background-color: #ffebee;
+}
+
+/* Barra de acciones */
+.action-bar {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin: 20px 0;
+}
+
+.action-btn {
+    background-color: white;
+    border: 2px solid #e0e0e0;
+    border-radius: 12px;
+    padding: 16px 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    min-height: 80px;
+}
+
+.action-btn:hover {
+    border-color: #4a90e2;
+    background-color: #f8fbff;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(74, 144, 226, 0.15);
+}
+
+.action-btn:active {
+    transform: translateY(0);
+}
+
+.action-btn .icon {
+    font-size: 24px;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    background-color: #f5f5f5;
+    transition: background-color 0.3s ease;
+}
+
+.action-btn:hover .icon {
+    background-color: #e3f2fd;
+}
+
+.action-btn span {
+    font-size: 12px;
+    font-weight: 500;
+    color: #333;
+    text-align: center;
+    line-height: 1.2;
+}
+
+/* Estados especiales para botones */
+.action-btn.recording {
+    border-color: #f44336;
+    background-color: #ffebee;
+    animation: pulse 1.5s infinite;
+}
+
+.action-btn.recording .icon {
+    background-color: #f44336;
+    color: white;
+}
+
+@keyframes pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(244, 67, 54, 0.7);
+    }
+    70% {
+        box-shadow: 0 0 0 10px rgba(244, 67, 54, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(244, 67, 54, 0);
+    }
+}
+
+@keyframes slideInRight {
+    from {
+        opacity: 0;
+        transform: translateX(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* Responsive para la barra de acciones */
+@media (max-width: 480px) {
+    .action-bar {
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+    }
+    
+    .action-btn {
+        padding: 12px 8px;
+        min-height: 70px;
+    }
+    
+    .action-btn .icon {
+        font-size: 20px;
+        width: 32px;
+        height: 32px;
+    }
+    
+    .action-btn span {
+        font-size: 11px;
+    }
+}

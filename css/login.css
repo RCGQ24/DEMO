@@ -1,0 +1,30 @@
+/* Estilos específicos para la pantalla de login */
+#login-screen .panel {
+    max-width: 350px;
+}
+
+#login-form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+#login-form .input-group {
+    margin-bottom: 0;
+}
+
+/* Animación especial para el formulario de login */
+#login-form {
+    animation: slideInUp 0.5s ease-out;
+}
+
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
