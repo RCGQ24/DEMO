@@ -1,7 +1,8 @@
 // Funcionalidad de la pantalla de selección de área
 class AreaSelectionScreen {
     constructor() {
-        this.areaList = document.querySelector('.area-list');
+        this.form = document.getElementById('area-form');
+        this.areaSelect = document.getElementById('area-select');
         this.selectedArea = null;
         
         this.init();
@@ -13,12 +14,10 @@ class AreaSelectionScreen {
     }
 
     setupEventListeners() {
-        // Manejar clics en elementos de área
-        this.areaList.addEventListener('click', (e) => {
-            const areaItem = e.target.closest('.area-item');
-            if (areaItem && !areaItem.classList.contains('disabled')) {
-                this.selectArea(areaItem);
-            }
+        // Manejar envío del formulario
+        this.form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            this.handleSubmit();
         });
 
         // Escuchar cambios de pantalla
@@ -27,47 +26,24 @@ class AreaSelectionScreen {
                 this.onScreenShow();
             }
         });
-
-        // Doble clic para confirmar selección
-        this.areaList.addEventListener('dblclick', (e) => {
-            const areaItem = e.target.closest('.area-item');
-            if (areaItem && !areaItem.classList.contains('disabled') && this.selectedArea) {
-                this.confirmSelection();
-            }
-        });
     }
 
-    selectArea(areaItem) {
-        // Remover selección previa
-        document.querySelectorAll('.area-item').forEach(item => {
-            item.classList.remove('selected');
-        });
+    handleSubmit() {
+        const selectedArea = this.areaSelect.value;
+        
+        if (!selectedArea) {
+            utils.showNotification('Por favor, seleccione un área', 'warning');
+            return;
+        }
 
-        // Seleccionar nuevo elemento
-        areaItem.classList.add('selected');
-        this.selectedArea = areaItem.dataset.area;
+        this.selectedArea = selectedArea;
+        const areaName = this.areaSelect.options[this.areaSelect.selectedIndex].text;
 
         // Guardar selección
         this.saveSelection();
 
         // Mostrar confirmación visual
-        utils.showNotification(`Área seleccionada: ${areaItem.querySelector('span').textContent}`, 'success');
-
-        // Auto-navegar después de un breve delay
-        setTimeout(() => {
-            this.confirmSelection();
-        }, 1500);
-    }
-
-    confirmSelection() {
-        if (!this.selectedArea) {
-            utils.showNotification('Por favor, seleccione un área', 'warning');
-            return;
-        }
-
-        // Obtener el nombre del área seleccionada
-        const selectedItem = document.querySelector('.area-item.selected');
-        const areaName = selectedItem ? selectedItem.querySelector('span').textContent : this.selectedArea;
+        utils.showNotification(`Área seleccionada: ${areaName}`, 'success');
 
         // Navegar a la siguiente pantalla con los datos
         document.dispatchEvent(new CustomEvent('navigateTo', {
@@ -94,10 +70,8 @@ class AreaSelectionScreen {
     loadStoredSelection() {
         const storedData = app.getScreenData('area-selection-screen');
         if (storedData.selectedArea) {
-            const areaItem = document.querySelector(`[data-area="${storedData.selectedArea}"]`);
-            if (areaItem && !areaItem.classList.contains('disabled')) {
-                this.selectArea(areaItem);
-            }
+            this.areaSelect.value = storedData.selectedArea;
+            this.selectedArea = storedData.selectedArea;
         }
     }
 
@@ -118,8 +92,7 @@ class AreaSelectionScreen {
 
     // Método para verificar si un área está disponible
     isAreaAvailable(areaId) {
-        const areaItem = document.querySelector(`[data-area="${areaId}"]`);
-        return areaItem && !areaItem.classList.contains('disabled');
+        return areaId !== 'no-disponible';
     }
 }
 

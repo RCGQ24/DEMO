@@ -124,42 +124,16 @@ window.utils = {
     // Mostrar notificación
     showNotification(message, type = 'info') {
         const notification = document.createElement('div');
-        notification.className = `notification notification-${type}`;
+        notification.className = `notification ${type}`;
         notification.textContent = message;
-        
-        // Estilos básicos para la notificación
-        notification.style.cssText = `
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            padding: 12px 20px;
-            border-radius: 8px;
-            color: white;
-            font-weight: 500;
-            z-index: 1000;
-            animation: slideInRight 0.3s ease-out;
-        `;
-
-        // Colores según el tipo
-        const colors = {
-            success: '#4CAF50',
-            error: '#f44336',
-            warning: '#ff9800',
-            info: '#2196F3'
-        };
-        
-        notification.style.backgroundColor = colors[type] || colors.info;
         
         document.body.appendChild(notification);
         
         // Remover después de 3 segundos
         setTimeout(() => {
-            notification.style.animation = 'slideOutRight 0.3s ease-out';
-            setTimeout(() => {
-                if (notification.parentNode) {
-                    notification.parentNode.removeChild(notification);
-                }
-            }, 300);
+            if (notification.parentNode) {
+                notification.parentNode.removeChild(notification);
+            }
         }, 3000);
     }
 };

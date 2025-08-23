@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Demo App - Sistema de Gestión</title>
+    <title>DEMO - Sistema de Gestión Minera</title>
     
     <!-- CSS Global -->
     <link rel="stylesheet" href="css/global.css">
@@ -23,6 +23,14 @@
     <script src="js/result.js" defer></script>
 </head>
 <body>
+    <!-- Header DEMO -->
+    <header class="demo-header">
+        <div class="demo-title">
+            <span class="demo-text">DEMO</span>
+            <span class="demo-subtitle">Sistema de Gestión Minera</span>
+        </div>
+    </header>
+
     <!-- Pantalla 1: Login -->
     <div id="login-screen" class="screen active">
         <div class="panel">
@@ -45,20 +53,19 @@
     <div id="area-selection-screen" class="screen">
         <div class="panel">
             <h2>Seleccione Área</h2>
-            <div class="area-list">
-                <div class="area-item" data-area="pequena-mineria">
-                    <span>Pequeña Minería</span>
+            <form id="area-form">
+                <div class="input-group">
+                    <label for="area-select">Seleccione Área</label>
+                    <select id="area-select" name="area" required>
+                        <option value="">-- Seleccione un área --</option>
+                        <option value="pequena-mineria">Pequeña Minería</option>
+                        <option value="servicio-voladura">Servicio Voladura</option>
+                        <option value="arrime">Arrime</option>
+                        <option value="no-disponible">No disponible</option>
+                    </select>
                 </div>
-                <div class="area-item" data-area="servicio-voladura">
-                    <span>Servicio Voladura</span>
-                </div>
-                <div class="area-item" data-area="arrime">
-                    <span>Arrime</span>
-                </div>
-                <div class="area-item disabled" data-area="no-disponible">
-                    <span class="disabled-text">No disponible</span>
-                </div>
-            </div>
+                <button type="submit" class="btn-primary">Continuar</button>
+            </form>
         </div>
     </div>
 
@@ -68,11 +75,9 @@
             <h2>Seleccione Proceso</h2>
             <form id="process-form">
                 <div class="input-group">
-                    <label for="area-select">Seleccione Área</label>
-                    <select id="area-select" name="area" required>
-                        <option value="arrime" selected>Arrime</option>
-                        <option value="pequena-mineria">Pequeña Minería</option>
-                        <option value="servicio-voladura">Servicio Voladura</option>
+                    <label for="process-area-select">Área Seleccionada</label>
+                    <select id="process-area-select" name="area" required disabled>
+                        <option value="">-- Cargando área --</option>
                     </select>
                 </div>
                 <div class="input-group">

@@ -2,7 +2,7 @@
 class ProcessSelectionScreen {
     constructor() {
         this.form = document.getElementById('process-form');
-        this.areaSelect = document.getElementById('area-select');
+        this.areaSelect = document.getElementById('process-area-select');
         this.processSelect = document.getElementById('process-select');
         this.subprocessSelect = document.getElementById('subprocess-select');
         
@@ -12,7 +12,7 @@ class ProcessSelectionScreen {
     init() {
         this.setupEventListeners();
         this.loadStoredData();
-        this.updateProcessOptions();
+        this.setupDefaultOptions();
     }
 
     setupEventListeners() {
@@ -20,16 +20,6 @@ class ProcessSelectionScreen {
         this.form.addEventListener('submit', (e) => {
             e.preventDefault();
             this.handleSubmit();
-        });
-
-        // Actualizar opciones cuando cambie el área
-        this.areaSelect.addEventListener('change', () => {
-            this.updateProcessOptions();
-        });
-
-        // Actualizar sub-procesos cuando cambie el proceso
-        this.processSelect.addEventListener('change', () => {
-            this.updateSubprocessOptions();
         });
 
         // Escuchar cambios de pantalla
@@ -40,86 +30,36 @@ class ProcessSelectionScreen {
         });
     }
 
-    updateProcessOptions() {
-        const selectedArea = this.areaSelect.value;
-        
-        // Limpiar opciones actuales
-        this.processSelect.innerHTML = '';
-        
-        // Definir procesos según el área
-        const processOptions = {
-            'arrime': [
-                { value: 'inspeccion', text: 'Inspección' },
-                { value: 'mantenimiento', text: 'Mantenimiento' },
-                { value: 'control', text: 'Control' }
-            ],
-            'pequena-mineria': [
-                { value: 'extraccion', text: 'Extracción' },
-                { value: 'procesamiento', text: 'Procesamiento' },
-                { value: 'transporte', text: 'Transporte' }
-            ],
-            'servicio-voladura': [
-                { value: 'perforacion', text: 'Perforación' },
-                { value: 'carga', text: 'Carga' },
-                { value: 'voladura', text: 'Voladura' }
-            ]
-        };
-
-        const options = processOptions[selectedArea] || [
-            { value: 'inspeccion', text: 'Inspección' },
-            { value: 'mantenimiento', text: 'Mantenimiento' },
-            { value: 'control', text: 'Control' }
-        ];
-
-        // Agregar opciones
-        options.forEach(option => {
-            const optionElement = document.createElement('option');
-            optionElement.value = option.value;
-            optionElement.textContent = option.text;
-            this.processSelect.appendChild(optionElement);
-        });
-
-        // Actualizar sub-procesos
-        this.updateSubprocessOptions();
-    }
-
-    updateSubprocessOptions() {
-        const selectedProcess = this.processSelect.value;
-        
-        // Limpiar opciones actuales
-        this.subprocessSelect.innerHTML = '';
-        
-        // Definir sub-procesos según el proceso
-        const subprocessOptions = {
-            'inspeccion': [
-                { value: 'bla-bla', text: 'Bla bla' },
-                { value: 'revision', text: 'Revisión' },
-                { value: 'verificacion', text: 'Verificación' }
-            ],
-            'mantenimiento': [
-                { value: 'preventivo', text: 'Preventivo' },
-                { value: 'correctivo', text: 'Correctivo' },
-                { value: 'predictivo', text: 'Predictivo' }
-            ],
-            'control': [
-                { value: 'calidad', text: 'Control de Calidad' },
-                { value: 'seguridad', text: 'Control de Seguridad' },
-                { value: 'no-disponible', text: 'No disponible' }
-            ]
-        };
-
-        const options = subprocessOptions[selectedProcess] || [
-            { value: 'bla-bla', text: 'Bla bla' },
+    setupDefaultOptions() {
+        // Configurar todas las opciones de área (para mostrar la seleccionada)
+        this.areaSelect.innerHTML = '';
+        const areaOptions = [
+            { value: 'pequena-mineria', text: 'Pequeña Minería' },
+            { value: 'servicio-voladura', text: 'Servicio Voladura' },
+            { value: 'arrime', text: 'Arrime' },
             { value: 'no-disponible', text: 'No disponible' }
         ];
-
-        // Agregar opciones
-        options.forEach(option => {
+        
+        areaOptions.forEach(option => {
             const optionElement = document.createElement('option');
             optionElement.value = option.value;
             optionElement.textContent = option.text;
-            this.subprocessSelect.appendChild(optionElement);
+            this.areaSelect.appendChild(optionElement);
         });
+
+        // Configurar proceso único: Inspección
+        this.processSelect.innerHTML = '';
+        const processOption = document.createElement('option');
+        processOption.value = 'inspeccion';
+        processOption.textContent = 'Inspección';
+        this.processSelect.appendChild(processOption);
+
+        // Configurar subproceso único: Bla bla
+        this.subprocessSelect.innerHTML = '';
+        const subprocessOption = document.createElement('option');
+        subprocessOption.value = 'bla-bla';
+        subprocessOption.textContent = 'Bla bla';
+        this.subprocessSelect.appendChild(subprocessOption);
     }
 
     async handleSubmit() {
@@ -190,20 +130,24 @@ class ProcessSelectionScreen {
     }
 
     loadStoredData() {
+        // Cargar datos de la pantalla anterior (área seleccionada)
+        const areaData = app.getScreenData('area-selection-screen');
+        if (areaData && areaData.selectedArea) {
+            this.areaSelect.value = areaData.selectedArea;
+        }
+
+        // Cargar datos guardados de esta pantalla
         const storedData = app.getScreenData('process-selection-screen');
-        
-        if (storedData.area) {
-            this.areaSelect.value = storedData.area;
-            this.updateProcessOptions();
-        }
-        
-        if (storedData.process) {
-            this.processSelect.value = storedData.process;
-            this.updateSubprocessOptions();
-        }
-        
-        if (storedData.subprocess) {
-            this.subprocessSelect.value = storedData.subprocess;
+        if (storedData) {
+            if (storedData.area) {
+                this.areaSelect.value = storedData.area;
+            }
+            if (storedData.process) {
+                this.processSelect.value = storedData.process;
+            }
+            if (storedData.subprocess) {
+                this.subprocessSelect.value = storedData.subprocess;
+            }
         }
     }
 
