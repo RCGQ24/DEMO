@@ -45,18 +45,35 @@ class AreaSelectionScreen {
         // Mostrar confirmación visual
         utils.showNotification(`Área seleccionada: ${areaName}`, 'success');
 
-        // Navegar a la siguiente pantalla con los datos
-        document.dispatchEvent(new CustomEvent('navigateTo', {
-            detail: {
-                screen: 'process-selection-screen',
-                data: {
-                    'area-selection-screen': {
-                        selectedArea: this.selectedArea,
-                        areaName: areaName
+        // Si es "No disponible", ir directo a descripción
+        if (this.selectedArea === 'no-disponible') {
+            document.dispatchEvent(new CustomEvent('navigateTo', {
+                detail: {
+                    screen: 'description-screen',
+                    data: {
+                        'area-selection-screen': {
+                            selectedArea: this.selectedArea,
+                            areaName: areaName,
+                            isNewArea: true
+                        }
                     }
                 }
-            }
-        }));
+            }));
+        } else {
+            // Si es área existente, ir a proceso
+            document.dispatchEvent(new CustomEvent('navigateTo', {
+                detail: {
+                    screen: 'process-selection-screen',
+                    data: {
+                        'area-selection-screen': {
+                            selectedArea: this.selectedArea,
+                            areaName: areaName,
+                            isNewArea: false
+                        }
+                    }
+                }
+            }));
+        }
     }
 
     saveSelection() {

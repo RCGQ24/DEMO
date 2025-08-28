@@ -26,8 +26,7 @@
     <!-- Header DEMO -->
     <header class="demo-header">
         <div class="demo-title">
-            <span class="demo-text">DEMO</span>
-            <span class="demo-subtitle">Sistema de Gestión Minera</span>
+            <span class="demo-text">RAPTOR</span>
         </div>
     </header>
 
@@ -101,38 +100,83 @@
     <!-- Pantalla 4: Descripción y Adjuntos -->
     <div id="description-screen" class="screen">
         <div class="panel">
-            <h2>Describa el Área o actividad</h2>
+            <h2 id="description-title">Describa el Área o actividad</h2>
             <form id="description-form">
-                <div class="input-group">
-                    <textarea id="description" name="description" placeholder="Escriba la descripción aquí..." rows="6"></textarea>
+                <!-- Sección para área nueva (solo visible si es "No disponible") -->
+                <div id="new-area-section" style="display: none;">
+                    <div class="input-group">
+                        <label for="description">Título del Área Nueva</label>
+                        <textarea id="description" name="description" placeholder="Escriba el título de la nueva área..." rows="3"></textarea>
+                    </div>
+                    
+                    <!-- Área de archivos adjuntos -->
+                    <div class="attachments-area">
+                        <div class="attachments-header">
+                            <h3>Adjuntos Requeridos (mínimo 2)</h3>
+                            <span id="attachments-counter">0/4</span>
+                        </div>
+                        <div id="attachments-list"></div>
+                    </div>
+                    
+                    <!-- Barra de acciones -->
+                    <div class="action-bar">
+                        <button type="button" class="action-btn" id="take-photo">
+                            <div class="icon">📷</div>
+                            <span>Tomar foto</span>
+                        </button>
+                        <button type="button" class="action-btn" id="upload-image">
+                            <div class="icon">🖼️</div>
+                            <span>Cargar imagen</span>
+                        </button>
+                        <button type="button" class="action-btn" id="upload-file">
+                            <div class="icon">📄</div>
+                            <span>Cargar archivo</span>
+                        </button>
+                        <button type="button" class="action-btn" id="record-audio">
+                            <div class="icon">🎤</div>
+                            <span>Grabar audio</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Sección para área existente (solo visible si el área existe) -->
+                <div id="existing-area-section" style="display: none;">
+                    <div class="existing-data">
+                        <h3>Datos del Área Existente</h3>
+                        <div id="existing-area-info"></div>
+                    </div>
+                    
+                    <!-- Área de archivos adjuntos para área existente -->
+                    <div class="attachments-area">
+                        <div class="attachments-header">
+                            <h3>Adjuntar Archivos Adicionales</h3>
+                            <span id="existing-attachments-counter">0</span>
+                        </div>
+                        <div id="existing-attachments-list"></div>
+                    </div>
+                    
+                    <!-- Barra de acciones para área existente -->
+                    <div class="action-bar">
+                        <button type="button" class="action-btn" id="existing-take-photo">
+                            <div class="icon">📷</div>
+                            <span>Tomar foto</span>
+                        </button>
+                        <button type="button" class="action-btn" id="existing-upload-image">
+                            <div class="icon">🖼️</div>
+                            <span>Cargar imagen</span>
+                        </button>
+                        <button type="button" class="action-btn" id="existing-upload-file">
+                            <div class="icon">📄</div>
+                            <span>Cargar archivo</span>
+                        </button>
+                        <button type="button" class="action-btn" id="existing-record-audio">
+                            <div class="icon">🎤</div>
+                            <span>Grabar audio</span>
+                        </button>
+                    </div>
                 </div>
                 
-                <!-- Área de archivos adjuntos -->
-                <div class="attachments-area">
-                    <div id="attachments-list"></div>
-                </div>
-                
-                <!-- Barra de acciones -->
-                <div class="action-bar">
-                    <button type="button" class="action-btn" id="take-photo">
-                        <div class="icon">📷</div>
-                        <span>Tomar foto</span>
-                    </button>
-                    <button type="button" class="action-btn" id="upload-image">
-                        <div class="icon">🖼️</div>
-                        <span>Cargar imagen</span>
-                    </button>
-                    <button type="button" class="action-btn" id="upload-file">
-                        <div class="icon">📄</div>
-                        <span>Cargar archivo</span>
-                    </button>
-                    <button type="button" class="action-btn" id="record-audio">
-                        <div class="icon">🎤</div>
-                        <span>Grabar audio</span>
-                    </button>
-                </div>
-                
-                <button type="submit" class="btn-primary">Guardar</button>
+                <button type="submit" class="btn-primary">Continuar</button>
             </form>
         </div>
     </div>

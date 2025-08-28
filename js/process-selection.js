@@ -91,13 +91,17 @@ class ProcessSelectionScreen {
             // Mostrar mensaje de éxito
             utils.showNotification('Proceso guardado exitosamente', 'success');
             
-            // Navegar a la siguiente pantalla
+            // Verificar si es área nueva o existente
+            const isNewArea = formData.area === 'no-disponible';
+            
+            // Navegar a la siguiente pantalla con información del tipo de área
             setTimeout(() => {
                 document.dispatchEvent(new CustomEvent('navigateTo', {
                     detail: {
                         screen: 'description-screen',
                         data: {
-                            'process-selection-screen': formData
+                            'process-selection-screen': formData,
+                            isNewArea: isNewArea
                         }
                     }
                 }));

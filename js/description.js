@@ -5,11 +5,17 @@ class DescriptionScreen {
         this.descriptionTextarea = document.getElementById('description');
         this.attachmentsList = document.getElementById('attachments-list');
         
-        // Botones de acción
+        // Botones de acción para área nueva
         this.takePhotoBtn = document.getElementById('take-photo');
         this.uploadImageBtn = document.getElementById('upload-image');
         this.uploadFileBtn = document.getElementById('upload-file');
         this.recordAudioBtn = document.getElementById('record-audio');
+        
+        // Botones de acción para área existente
+        this.existingTakePhotoBtn = document.getElementById('existing-take-photo');
+        this.existingUploadImageBtn = document.getElementById('existing-upload-image');
+        this.existingUploadFileBtn = document.getElementById('existing-upload-file');
+        this.existingRecordAudioBtn = document.getElementById('existing-record-audio');
         
         // Inputs ocultos
         this.fileInput = document.getElementById('file-input');
@@ -37,11 +43,17 @@ class DescriptionScreen {
             this.handleSubmit();
         });
 
-        // Botones de acción
+        // Botones de acción para área nueva
         this.takePhotoBtn.addEventListener('click', () => this.takePhoto());
         this.uploadImageBtn.addEventListener('click', () => this.uploadImage());
         this.uploadFileBtn.addEventListener('click', () => this.uploadFile());
         this.recordAudioBtn.addEventListener('click', () => this.toggleAudioRecording());
+        
+        // Botones de acción para área existente
+        this.existingTakePhotoBtn.addEventListener('click', () => this.takePhoto());
+        this.existingUploadImageBtn.addEventListener('click', () => this.uploadImage());
+        this.existingUploadFileBtn.addEventListener('click', () => this.uploadFile());
+        this.existingRecordAudioBtn.addEventListener('click', () => this.toggleAudioRecording());
 
         // Inputs de archivo
         this.cameraInput.addEventListener('change', (e) => this.handleCameraFile(e));
@@ -290,6 +302,7 @@ class DescriptionScreen {
 
         this.attachments.push(attachment);
         this.renderAttachment(attachment);
+        this.updateAttachmentsCounter();
         this.saveAttachments();
 
         utils.showNotification(`Archivo agregado: ${file.name}`, 'success');
@@ -328,6 +341,7 @@ class DescriptionScreen {
             if (element) {
                 element.remove();
             }
+            this.updateAttachmentsCounter();
             this.saveAttachments();
             utils.showNotification('Archivo removido', 'info');
         }
@@ -386,23 +400,124 @@ class DescriptionScreen {
         this.descriptionTextarea.parentNode.appendChild(counter);
     }
 
-    async handleSubmit() {
-        const description = this.descriptionTextarea.value.trim();
-        
-        if (!description) {
-            utils.showNotification('Por favor, ingrese una descripción', 'warning');
-            return;
+    updateAttachmentsCounter() {
+        const counter = document.getElementById('attachments-counter');
+        if (counter) {
+            const current = this.attachments.length;
+            const required = 2;
+            counter.textContent = `${current}/${required}`;
+            
+            // Cambiar color según el progreso
+            if (current >= required) {
+                counter.style.background = 'linear-gradient(135deg, #4CAF50 0%, #45a049 100%)';
+            } else if (current > 0) {
+                counter.style.background = 'linear-gradient(135deg, #FFD700 0%, #F7931E 100%)';
+            } else {
+                counter.style.background = 'linear-gradient(135deg, #FF6B35 0%, #F7931E 100%)';
+            }
         }
+    }
 
-        // Guardar datos
-        const formData = {
-            description: description,
-            attachments: this.attachments.length
+    updateExistingAttachmentsCounter() {
+        const counter = document.getElementById('existing-attachments-counter');
+        if (counter) {
+            counter.textContent = this.attachments.length;
+        }
+    }
+
+    renderExistingAttachments() {
+        const container = document.getElementById('existing-attachments-list');
+        if (container) {
+            container.innerHTML = '';
+            this.attachments.forEach(attachment => {
+                this.renderExistingAttachment(attachment);
+            });
+        }
+    }
+
+    renderExistingAttachment(attachment) {
+        const container = document.getElementById('existing-attachments-list');
+        if (!container) return;
+        
+        const attachmentElement = document.createElement('div');
+        attachmentElement.className = 'attachment-item';
+        attachmentElement.dataset.id = attachment.id;
+
+        // Icono según tipo
+        const icons = {
+            'photo': '📷',
+            'image': '🖼️',
+            'file': '📄',
+            'audio': '🎵'
         };
 
-        app.saveScreenData('description-screen', formData);
+        attachmentElement.innerHTML = `
+            <div class="icon">${icons[attachment.type] || '📎'}</div>
+            <div class="info">
+                <div class="name">${attachment.name}</div>
+                <div class="size">${utils.formatFileSize(attachment.size)}</div>
+            </div>
+            <button class="remove" onclick="descriptionScreen.removeExistingAttachment('${attachment.id}')">🗑️</button>
+        `;
 
-        utils.showNotification('Descripción guardada exitosamente', 'success');
+        container.appendChild(attachmentElement);
+    }
+
+    removeExistingAttachment(id) {
+        const index = this.attachments.findIndex(att => att.id === id);
+        if (index !== -1) {
+            this.attachments.splice(index, 1);
+            this.updateExistingAttachmentsCounter();
+            this.renderExistingAttachments();
+            utils.showNotification('Archivo removido', 'info');
+        }
+    }
+
+    async handleSubmit() {
+        // Verificar si es área nueva o existente
+        const areaData = app.getScreenData('area-selection-screen');
+        const processData = app.getScreenData('process-selection-screen');
+        
+        let isNewArea = false;
+        let formData = {};
+        
+        if (areaData && areaData.isNewArea) {
+            // Es área nueva (vino directo de área-selection)
+            isNewArea = true;
+            
+            const description = this.descriptionTextarea.value.trim();
+            
+            if (!description) {
+                utils.showNotification('Por favor, ingrese el título de la nueva área', 'warning');
+                return;
+            }
+            
+            if (this.attachments.length < 2) {
+                utils.showNotification('Debe adjuntar al menos 2 elementos (foto, imagen, archivo o audio)', 'warning');
+                return;
+            }
+            
+            formData = {
+                description: description,
+                attachments: this.attachments.length,
+                isNewArea: true
+            };
+            
+            app.saveScreenData('description-screen', formData);
+            utils.showNotification('Nueva área creada exitosamente', 'success');
+        } else {
+            // Es área existente (vino de process-selection)
+            isNewArea = false;
+            
+            formData = {
+                isNewArea: false,
+                existingArea: processData.area,
+                additionalAttachments: this.attachments.length
+            };
+            
+            app.saveScreenData('description-screen', formData);
+            utils.showNotification('Archivos adicionales guardados exitosamente', 'success');
+        }
 
         // Navegar a la siguiente pantalla
         setTimeout(() => {
@@ -425,6 +540,111 @@ class DescriptionScreen {
         if (this.isRecording) {
             this.stopAudioRecording();
         }
+        
+        // Determinar si es área nueva o existente
+        this.determineAreaType();
+        
+        // Mostrar instrucciones según el tipo
+        const processData = app.getScreenData('process-selection-screen');
+        if (processData && processData.area === 'no-disponible') {
+            utils.showNotification('Complete el título y adjunte al menos 2 elementos', 'info');
+        } else {
+            utils.showNotification('Revisando datos del área existente', 'info');
+        }
+    }
+
+    determineAreaType() {
+        // Verificar si viene directo de área-selection (área nueva) o de process-selection (área existente)
+        const areaData = app.getScreenData('area-selection-screen');
+        const processData = app.getScreenData('process-selection-screen');
+        
+        let isNewArea = false;
+        let areaInfo = null;
+        
+        if (areaData && areaData.isNewArea) {
+            // Viene directo de área-selection (área nueva)
+            isNewArea = true;
+            areaInfo = areaData;
+        } else if (processData) {
+            // Viene de process-selection (área existente)
+            isNewArea = false;
+            areaInfo = processData;
+        }
+        
+        // Actualizar título de la pantalla
+        const title = document.getElementById('description-title');
+        if (isNewArea) {
+            title.textContent = 'Crear Nueva Área';
+        } else {
+            title.textContent = 'Datos del Área Existente';
+        }
+        
+        // Mostrar/ocultar secciones según el tipo
+        const newAreaSection = document.getElementById('new-area-section');
+        const existingAreaSection = document.getElementById('existing-area-section');
+        
+        if (isNewArea) {
+            newAreaSection.style.display = 'block';
+            existingAreaSection.style.display = 'none';
+            this.setupNewAreaValidation();
+        } else {
+            newAreaSection.style.display = 'none';
+            existingAreaSection.style.display = 'block';
+            this.loadExistingAreaData();
+        }
+    }
+
+    setupNewAreaValidation() {
+        // Configurar validación para área nueva
+        this.attachments = [];
+        this.updateAttachmentsCounter();
+        this.renderAttachments();
+    }
+
+    loadExistingAreaData() {
+        // Obtener datos reales del área seleccionada
+        const areaData = app.getScreenData('area-selection-screen');
+        const processData = app.getScreenData('process-selection-screen');
+        
+        if (!areaData || !processData) return;
+        
+        // Simular datos existentes basados en el área seleccionada
+        const areaNames = {
+            'pequena-mineria': 'Pequeña Minería',
+            'servicio-voladura': 'Servicio Voladura',
+            'arrime': 'Arrime'
+        };
+        
+        const existingData = {
+            area: areaNames[areaData.selectedArea] || areaData.selectedArea,
+            process: processData.process || 'Inspección',
+            subprocess: processData.subprocess || 'Bla bla',
+            description: 'Área de trabajo existente con datos previos',
+            attachments: [
+                { type: 'photo', name: 'foto_inspeccion_001.jpg', size: '2.3 MB' },
+                { type: 'file', name: 'reporte_previo.pdf', size: '1.8 MB' }
+            ],
+            lastUpdate: '15/03/2024'
+        };
+        
+        const infoContainer = document.getElementById('existing-area-info');
+        infoContainer.innerHTML = `
+            <div style="margin-bottom: 15px;">
+                <strong>Área:</strong> ${existingData.area}<br>
+                <strong>Proceso:</strong> ${existingData.process} - ${existingData.subprocess}<br>
+                <strong>Descripción:</strong> ${existingData.description}<br>
+                <strong>Última actualización:</strong> ${existingData.lastUpdate}
+            </div>
+            <div style="margin-top: 15px;">
+                <strong>Adjuntos existentes:</strong><br>
+                ${existingData.attachments.map(att => `• ${att.name} (${att.size})`).join('<br>')}
+            </div>
+        `;
+        
+        // Configurar para área existente
+        this.attachments = [];
+        this.updateExistingAttachmentsCounter();
+        this.renderExistingAttachments();
     }
 }
 
