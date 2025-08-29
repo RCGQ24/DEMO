@@ -33,17 +33,23 @@ class ProcessSelectionScreen {
     setupDefaultOptions() {
         // Configurar todas las opciones de área (para mostrar la seleccionada)
         this.areaSelect.innerHTML = '';
-        const areaOptions = [
+        
+        // Obtener áreas básicas y dinámicas
+        const basicAreas = [
             { value: 'pequena-mineria', text: 'Pequeña Minería' },
             { value: 'servicio-voladura', text: 'Servicio Voladura' },
             { value: 'arrime', text: 'Arrime' },
             { value: 'no-disponible', text: 'No disponible' }
         ];
         
-        areaOptions.forEach(option => {
+        // Obtener áreas dinámicas desde localStorage
+        const dynamicAreas = this.getDynamicAreas();
+        
+        // Agregar todas las áreas
+        [...basicAreas, ...dynamicAreas].forEach(area => {
             const optionElement = document.createElement('option');
-            optionElement.value = option.value;
-            optionElement.textContent = option.text;
+            optionElement.value = area.value || area.id;
+            optionElement.textContent = area.text || area.name;
             this.areaSelect.appendChild(optionElement);
         });
 
@@ -60,6 +66,12 @@ class ProcessSelectionScreen {
         subprocessOption.value = 'bla-bla';
         subprocessOption.textContent = 'Bla bla';
         this.subprocessSelect.appendChild(subprocessOption);
+    }
+
+    // Obtener áreas dinámicas
+    getDynamicAreas() {
+        const stored = localStorage.getItem('dynamicAreas');
+        return stored ? JSON.parse(stored) : [];
     }
 
     async handleSubmit() {
@@ -137,7 +149,19 @@ class ProcessSelectionScreen {
         // Cargar datos de la pantalla anterior (área seleccionada)
         const areaData = app.getScreenData('area-selection-screen');
         if (areaData && areaData.selectedArea) {
-            this.areaSelect.value = areaData.selectedArea;
+            // Verificar si el área seleccionada existe en el dropdown
+            const areaExists = Array.from(this.areaSelect.options).some(option => 
+                option.value === areaData.selectedArea
+            );
+            
+            if (areaExists) {
+                this.areaSelect.value = areaData.selectedArea;
+            } else {
+                // Si no existe, puede ser un área dinámica que aún no se ha cargado
+                // Recargar las opciones y luego establecer el valor
+                this.setupDefaultOptions();
+                this.areaSelect.value = areaData.selectedArea;
+            }
         }
 
         // Cargar datos guardados de esta pantalla
@@ -156,6 +180,9 @@ class ProcessSelectionScreen {
     }
 
     onScreenShow() {
+        // Recargar opciones de área (por si se agregaron nuevas áreas dinámicas)
+        this.setupDefaultOptions();
+        
         this.loadStoredData();
         
         // Mostrar instrucciones

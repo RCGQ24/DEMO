@@ -84,16 +84,48 @@ class ResultScreen {
     }
 
     loadStoredData() {
-        const storedData = app.getScreenData('result-screen');
+        // Obtener datos del área actual
+        const areaData = app.getScreenData('area-selection-screen');
+        const processData = app.getScreenData('process-selection-screen');
+        const descriptionData = app.getScreenData('description-screen');
         
-        if (storedData.result) {
-            this.resultTextarea.value = storedData.result;
-            this.updateCharCounter(this.resultTextarea, 'result');
+        let areaId = null;
+        
+        if (areaData && areaData.isNewArea) {
+            // Es área nueva
+            areaId = descriptionData?.newAreaId;
+        } else if (processData && processData.area) {
+            // Es área existente
+            areaId = processData.area;
         }
+        
+        // Cargar datos específicos del área si existe
+        if (areaId) {
+            const areaSpecificData = fileManager.getAreaData(areaId);
+            console.log('Datos del área cargados:', areaSpecificData);
+            
+            if (areaSpecificData.result) {
+                this.resultTextarea.value = areaSpecificData.result;
+                this.updateCharCounter(this.resultTextarea, 'result');
+            }
 
-        if (storedData.observation) {
-            this.observationTextarea.value = storedData.observation;
-            this.updateCharCounter(this.observationTextarea, 'observation');
+            if (areaSpecificData.observation) {
+                this.observationTextarea.value = areaSpecificData.observation;
+                this.updateCharCounter(this.observationTextarea, 'observation');
+            }
+        } else {
+            // Fallback a datos de sessionStorage
+            const storedData = app.getScreenData('result-screen');
+            
+            if (storedData.result) {
+                this.resultTextarea.value = storedData.result;
+                this.updateCharCounter(this.resultTextarea, 'result');
+            }
+
+            if (storedData.observation) {
+                this.observationTextarea.value = storedData.observation;
+                this.updateCharCounter(this.observationTextarea, 'observation');
+            }
         }
     }
 
@@ -106,6 +138,40 @@ class ResultScreen {
             return;
         }
 
+        // Obtener información del área actual
+        const areaData = app.getScreenData('area-selection-screen');
+        const processData = app.getScreenData('process-selection-screen');
+        const descriptionData = app.getScreenData('description-screen');
+        
+        // Debug: mostrar qué datos tenemos
+        console.log('Debug - areaData:', areaData);
+        console.log('Debug - processData:', processData);
+        console.log('Debug - descriptionData:', descriptionData);
+        
+        let areaId = null;
+        let areaName = '';
+        
+        if (areaData && areaData.isNewArea) {
+            // Es área nueva
+            areaId = descriptionData?.newAreaId;
+            areaName = descriptionData?.description || 'Nueva Área';
+        } else if (processData && processData.area) {
+            // Es área existente
+            areaId = processData.area;
+            if (areaId && areaId.startsWith('dynamic-')) {
+                const dynamicAreas = JSON.parse(localStorage.getItem('dynamicAreas') || '[]');
+                const dynamicArea = dynamicAreas.find(area => area.id === areaId);
+                areaName = dynamicArea ? dynamicArea.name : areaId;
+            } else if (areaId) {
+                const areaNames = {
+                    'pequena-mineria': 'Pequeña Minería',
+                    'servicio-voladura': 'Servicio Voladura',
+                    'arrime': 'Arrime'
+                };
+                areaName = areaNames[areaId] || areaId;
+            }
+        }
+
         // Mostrar indicador de carga
         const submitBtn = this.form.querySelector('button[type="submit"]');
         const originalText = submitBtn.textContent;
@@ -113,6 +179,16 @@ class ResultScreen {
         submitBtn.disabled = true;
 
         try {
+            // Guardar datos del área
+            if (areaId && areaId.trim()) {
+                const areaDataToSave = {
+                    result: result,
+                    observation: observation,
+                    lastUpdated: new Date().toISOString()
+                };
+                fileManager.saveAreaData(areaId, areaDataToSave);
+            }
+            
             // Simular envío a servidor
             await this.simulateServerSubmission({ result, observation });
             
@@ -120,7 +196,7 @@ class ResultScreen {
             this.saveData({ result, observation });
             
             // Mostrar resumen completo
-            this.showCompleteSummary();
+            this.showCompleteSummary(areaId, areaName);
             
         } catch (error) {
             utils.showNotification('Error al guardar: ' + error.message, 'error');
@@ -144,9 +220,15 @@ class ResultScreen {
         });
     }
 
-    showCompleteSummary() {
+    showCompleteSummary(areaId, areaName) {
         // Obtener todos los datos del flujo
         const allData = app.getStoredData();
+        
+        // Obtener datos específicos del área si existe
+        let areaSpecificData = {};
+        if (areaId && areaId.trim()) {
+            areaSpecificData = fileManager.getAreaData(areaId);
+        }
         
         // Crear modal de resumen
         const modal = document.createElement('div');
@@ -201,8 +283,16 @@ class ResultScreen {
             `;
         }
 
-        // Datos de descripción
-        if (allData['description-screen']) {
+        // Datos de descripción y área
+        if (areaName) {
+            summaryHTML += `
+                <div style="margin: 10px 0; padding: 10px; background: #f5f5f5; border-radius: 8px;">
+                    <strong>Área:</strong> ${areaName}
+                    ${areaSpecificData.description ? `<br><strong>Descripción:</strong> ${areaSpecificData.description}` : ''}
+                    ${areaSpecificData.attachments ? `<br><strong>Archivos adjuntos:</strong> ${areaSpecificData.attachments}` : ''}
+                </div>
+            `;
+        } else if (allData['description-screen']) {
             summaryHTML += `
                 <div style="margin: 10px 0; padding: 10px; background: #f5f5f5; border-radius: 8px;">
                     <strong>Descripción:</strong> ${allData['description-screen'].description || 'N/A'}

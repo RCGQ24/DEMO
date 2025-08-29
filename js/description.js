@@ -301,11 +301,45 @@ class DescriptionScreen {
         };
 
         this.attachments.push(attachment);
-        this.renderAttachment(attachment);
+        this.renderNewAttachment(attachment);
         this.updateAttachmentsCounter();
         this.saveAttachments();
 
+        // Guardar archivo para el área específica
+        this.saveFileToArea(attachment);
+
         utils.showNotification(`Archivo agregado: ${file.name}`, 'success');
+    }
+
+    // Guardar archivo para el área específica
+    saveFileToArea(attachment) {
+        const areaData = app.getScreenData('area-selection-screen');
+        const processData = app.getScreenData('process-selection-screen');
+        
+        let areaId = null;
+        
+        if (areaData && areaData.isNewArea) {
+            // Para área nueva, usar el nombre como ID temporal
+            areaId = `temp-${Date.now()}`;
+        } else if (processData && processData.area) {
+            // Para área existente, usar el ID del área
+            areaId = processData.area;
+        }
+        
+        if (areaId) {
+            // Convertir archivo a formato compatible con localStorage
+            const fileData = {
+                name: attachment.name,
+                type: attachment.type,
+                size: attachment.size,
+                date: attachment.date
+            };
+            
+            console.log(`Guardando archivo para área ${areaId}:`, fileData);
+            fileManager.saveFileForArea(areaId, fileData);
+        } else {
+            console.warn('No se pudo determinar el área para guardar el archivo');
+        }
     }
 
     renderAttachment(attachment) {
@@ -337,11 +371,8 @@ class DescriptionScreen {
         const index = this.attachments.findIndex(att => att.id === id);
         if (index !== -1) {
             this.attachments.splice(index, 1);
-            const element = document.querySelector(`[data-id="${id}"]`);
-            if (element) {
-                element.remove();
-            }
             this.updateAttachmentsCounter();
+            this.renderNewAttachments();
             this.saveAttachments();
             utils.showNotification('Archivo removido', 'info');
         }
@@ -463,6 +494,47 @@ class DescriptionScreen {
         container.appendChild(attachmentElement);
     }
 
+    // Renderizar archivos para área nueva
+    renderNewAttachments() {
+        const container = document.getElementById('attachments-list');
+        if (!container) return;
+        
+        container.innerHTML = '';
+        
+        this.attachments.forEach(attachment => {
+            this.renderNewAttachment(attachment);
+        });
+    }
+
+    // Renderizar un archivo individual para área nueva
+    renderNewAttachment(attachment) {
+        const container = document.getElementById('attachments-list');
+        if (!container) return;
+        
+        const attachmentElement = document.createElement('div');
+        attachmentElement.className = 'attachment-item';
+        attachmentElement.dataset.id = attachment.id;
+
+        // Icono según tipo
+        const icons = {
+            'photo': '📷',
+            'image': '🖼️',
+            'file': '📄',
+            'audio': '🎵'
+        };
+
+        attachmentElement.innerHTML = `
+            <div class="icon">${icons[attachment.type] || '📎'}</div>
+            <div class="info">
+                <div class="name">${attachment.name}</div>
+                <div class="size">${utils.formatFileSize(attachment.size)}</div>
+            </div>
+            <button class="remove" onclick="descriptionScreen.removeAttachment('${attachment.id}')">🗑️</button>
+        `;
+
+        container.appendChild(attachmentElement);
+    }
+
     removeExistingAttachment(id) {
         const index = this.attachments.findIndex(att => att.id === id);
         if (index !== -1) {
@@ -471,6 +543,116 @@ class DescriptionScreen {
             this.renderExistingAttachments();
             utils.showNotification('Archivo removido', 'info');
         }
+    }
+
+    // Eliminar archivo existente del área
+    removeExistingFile(fileId) {
+        const areaData = app.getScreenData('area-selection-screen');
+        const processData = app.getScreenData('process-selection-screen');
+        const areaId = areaData?.selectedArea || processData?.area;
+        
+        if (areaId) {
+            fileManager.removeFileFromArea(areaId, fileId);
+            utils.showNotification('Archivo eliminado del área', 'success');
+            
+            // Recargar archivos existentes
+            this.loadExistingAreaFiles(areaId);
+        }
+    }
+
+    // Mover archivos temporales a la nueva área creada
+    moveTempFilesToNewArea(newAreaId) {
+        const tempAreaId = `temp-${Date.now() - 1000}`; // Buscar área temporal reciente
+        const tempFiles = fileManager.getAreaFiles(tempAreaId);
+        
+        if (tempFiles.length > 0) {
+            // Mover archivos a la nueva área
+            fileManager.saveFileForArea(newAreaId, tempFiles);
+            
+            // Limpiar archivos temporales
+            fileManager.clearAreaFiles(tempAreaId);
+        }
+    }
+
+    // Cargar archivos existentes del área
+    loadExistingAreaFiles(areaId) {
+        console.log('Cargando archivos para área:', areaId);
+        
+        // Si es un área dinámica, buscar por el nombre en lugar del ID
+        let searchAreaId = areaId;
+        
+        if (areaId && areaId.startsWith('dynamic-')) {
+            // Es un área dinámica, buscar archivos por este ID
+            searchAreaId = areaId;
+        } else if (areaId && (areaId === 'pequena-mineria' || areaId === 'servicio-voladura' || areaId === 'arrime')) {
+            // Es un área básica, usar el ID tal como está
+            searchAreaId = areaId;
+        }
+        
+        console.log('Buscando archivos con ID:', searchAreaId);
+        const existingFiles = fileManager.getFileInfo(searchAreaId);
+        console.log('Archivos encontrados:', existingFiles);
+        
+        if (existingFiles && existingFiles.length > 0) {
+            // Mostrar archivos existentes en la información del área
+            const infoContainer = document.getElementById('existing-area-info');
+            if (infoContainer) {
+                const existingFilesHtml = existingFiles.map(file => 
+                    `• ${file.name} (${utils.formatFileSize(file.size)}) - ${file.type}`
+                ).join('<br>');
+                
+                const filesSection = document.createElement('div');
+                filesSection.style.marginTop = '15px';
+                filesSection.innerHTML = `
+                    <strong>Archivos existentes:</strong><br>
+                    ${existingFilesHtml}
+                `;
+                
+                infoContainer.appendChild(filesSection);
+            }
+            
+            // También mostrar archivos en la lista de adjuntos existentes
+            this.displayExistingAttachments(existingFiles);
+        } else {
+            console.log('No se encontraron archivos para el área:', searchAreaId);
+        }
+    }
+
+    // Mostrar archivos existentes en la lista de adjuntos
+    displayExistingAttachments(existingFiles) {
+        const container = document.getElementById('existing-attachments-list');
+        if (!container) return;
+        
+        container.innerHTML = '';
+        
+        existingFiles.forEach(file => {
+            const attachmentElement = document.createElement('div');
+            attachmentElement.className = 'attachment-item existing';
+            attachmentElement.dataset.id = file.id;
+            attachmentElement.dataset.fileId = file.id;
+
+            const icons = {
+                'photo': '📷',
+                'image': '🖼️',
+                'file': '📄',
+                'audio': '🎵'
+            };
+
+            attachmentElement.innerHTML = `
+                <div class="icon">${icons[file.type] || '📎'}</div>
+                <div class="info">
+                    <div class="name">${file.name}</div>
+                    <div class="size">${utils.formatFileSize(file.size)}</div>
+                    <div class="date">${new Date(file.savedAt).toLocaleDateString()}</div>
+                </div>
+                <button class="remove" onclick="descriptionScreen.removeExistingFile('${file.id}')" title="Eliminar archivo">🗑️</button>
+            `;
+
+            container.appendChild(attachmentElement);
+        });
+        
+        // Actualizar contador
+        this.updateExistingAttachmentsCounter();
     }
 
     async handleSubmit() {
@@ -497,14 +679,29 @@ class DescriptionScreen {
                 return;
             }
             
+            // Crear nueva área dinámica
+            const newArea = window.areaSelectionScreen.addDynamicArea(description);
+            
+            // Mover archivos temporales a la nueva área
+            this.moveTempFilesToNewArea(newArea.id);
+            
+            // Guardar datos completos del área
+            const areaData = {
+                description: description,
+                attachments: this.attachments.length,
+                createdAt: new Date().toISOString()
+            };
+            fileManager.saveAreaData(newArea.id, areaData);
+            
             formData = {
                 description: description,
                 attachments: this.attachments.length,
-                isNewArea: true
+                isNewArea: true,
+                newAreaId: newArea.id
             };
             
             app.saveScreenData('description-screen', formData);
-            utils.showNotification('Nueva área creada exitosamente', 'success');
+            utils.showNotification(`Nueva área "${description}" creada exitosamente`, 'success');
         } else {
             // Es área existente (vino de process-selection)
             isNewArea = false;
@@ -558,6 +755,10 @@ class DescriptionScreen {
         const areaData = app.getScreenData('area-selection-screen');
         const processData = app.getScreenData('process-selection-screen');
         
+        // Debug: mostrar qué datos tenemos
+        console.log('Debug - areaData:', areaData);
+        console.log('Debug - processData:', processData);
+        
         let isNewArea = false;
         let areaInfo = null;
         
@@ -565,10 +766,14 @@ class DescriptionScreen {
             // Viene directo de área-selection (área nueva)
             isNewArea = true;
             areaInfo = areaData;
-        } else if (processData) {
+        } else if (processData && processData.area) {
             // Viene de process-selection (área existente)
             isNewArea = false;
             areaInfo = processData;
+        } else {
+            // No hay datos suficientes, mostrar error
+            utils.showNotification('Error: No se pudo determinar el tipo de área', 'error');
+            return;
         }
         
         // Actualizar título de la pantalla
@@ -598,7 +803,21 @@ class DescriptionScreen {
         // Configurar validación para área nueva
         this.attachments = [];
         this.updateAttachmentsCounter();
-        this.renderAttachments();
+        this.renderNewAttachments();
+        
+        // Limpiar lista de archivos existentes (área nueva no debe mostrar archivos previos)
+        const existingList = document.getElementById('existing-attachments-list');
+        if (existingList) {
+            existingList.innerHTML = '';
+        }
+        
+        // Limpiar descripción
+        if (this.descriptionTextarea) {
+            this.descriptionTextarea.value = '';
+            this.updateCharCounter();
+        }
+        
+        console.log('Configuración para área nueva completada');
     }
 
     loadExistingAreaData() {
@@ -606,45 +825,55 @@ class DescriptionScreen {
         const areaData = app.getScreenData('area-selection-screen');
         const processData = app.getScreenData('process-selection-screen');
         
-        if (!areaData || !processData) return;
+        if (!processData || !processData.area) {
+            utils.showNotification('Error: No se encontraron datos del proceso', 'error');
+            return;
+        }
         
-        // Simular datos existentes basados en el área seleccionada
-        const areaNames = {
-            'pequena-mineria': 'Pequeña Minería',
-            'servicio-voladura': 'Servicio Voladura',
-            'arrime': 'Arrime'
-        };
+        // Obtener nombre del área (básica o dinámica)
+        let areaName = '';
+        const selectedArea = areaData.selectedArea || processData.area;
         
-        const existingData = {
-            area: areaNames[areaData.selectedArea] || areaData.selectedArea,
-            process: processData.process || 'Inspección',
-            subprocess: processData.subprocess || 'Bla bla',
-            description: 'Área de trabajo existente con datos previos',
-            attachments: [
-                { type: 'photo', name: 'foto_inspeccion_001.jpg', size: '2.3 MB' },
-                { type: 'file', name: 'reporte_previo.pdf', size: '1.8 MB' }
-            ],
-            lastUpdate: '15/03/2024'
-        };
+        if (selectedArea && selectedArea.startsWith('dynamic-')) {
+            // Es un área dinámica, buscar el nombre en localStorage
+            const dynamicAreas = JSON.parse(localStorage.getItem('dynamicAreas') || '[]');
+            const dynamicArea = dynamicAreas.find(area => area.id === selectedArea);
+            areaName = dynamicArea ? dynamicArea.name : selectedArea;
+        } else if (selectedArea) {
+            // Es un área básica
+            const areaNames = {
+                'pequena-mineria': 'Pequeña Minería',
+                'servicio-voladura': 'Servicio Voladura',
+                'arrime': 'Arrime'
+            };
+            areaName = areaNames[selectedArea] || selectedArea;
+        } else {
+            areaName = 'Área no especificada';
+        }
+        
+        // Cargar datos específicos del área
+        const areaSpecificData = fileManager.getAreaData(selectedArea);
+        console.log('Datos específicos del área cargados:', areaSpecificData);
         
         const infoContainer = document.getElementById('existing-area-info');
         infoContainer.innerHTML = `
             <div style="margin-bottom: 15px;">
-                <strong>Área:</strong> ${existingData.area}<br>
-                <strong>Proceso:</strong> ${existingData.process} - ${existingData.subprocess}<br>
-                <strong>Descripción:</strong> ${existingData.description}<br>
-                <strong>Última actualización:</strong> ${existingData.lastUpdate}
-            </div>
-            <div style="margin-top: 15px;">
-                <strong>Adjuntos existentes:</strong><br>
-                ${existingData.attachments.map(att => `• ${att.name} (${att.size})`).join('<br>')}
+                <strong>Área:</strong> ${areaName}<br>
+                <strong>Proceso:</strong> ${processData.process || 'Inspección'} - ${processData.subprocess || 'Bla bla'}<br>
+                <strong>Descripción:</strong> ${areaSpecificData.description || 'Área de trabajo existente con datos previos'}<br>
+                <strong>Última actualización:</strong> ${areaSpecificData.lastUpdated ? new Date(areaSpecificData.lastUpdated).toLocaleDateString() : '15/03/2024'}
             </div>
         `;
         
-        // Configurar para área existente
+        // Cargar archivos existentes del área
+        this.loadExistingAreaFiles(selectedArea);
+        
+        // Configurar para área existente (archivos adicionales)
         this.attachments = [];
         this.updateExistingAttachmentsCounter();
         this.renderExistingAttachments();
+        
+        console.log('Datos del área existente cargados:', areaName, selectedArea);
     }
 }
 

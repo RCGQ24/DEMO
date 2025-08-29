@@ -11,6 +11,7 @@ class AreaSelectionScreen {
     init() {
         this.setupEventListeners();
         this.loadStoredSelection();
+        this.loadDynamicAreas();
     }
 
     setupEventListeners() {
@@ -111,9 +112,70 @@ class AreaSelectionScreen {
     isAreaAvailable(areaId) {
         return areaId !== 'no-disponible';
     }
+
+    // Cargar áreas dinámicas desde localStorage
+    loadDynamicAreas() {
+        const dynamicAreas = this.getDynamicAreas();
+        
+        // Limpiar opciones existentes (mantener solo las básicas)
+        this.areaSelect.innerHTML = '';
+        
+        // Agregar opción por defecto
+        const defaultOption = document.createElement('option');
+        defaultOption.value = '';
+        defaultOption.textContent = '-- Seleccione un área --';
+        this.areaSelect.appendChild(defaultOption);
+        
+        // Agregar áreas básicas
+        const basicAreas = [
+            { value: 'pequena-mineria', text: 'Pequeña Minería' },
+            { value: 'servicio-voladura', text: 'Servicio Voladura' },
+            { value: 'arrime', text: 'Arrime' },
+            { value: 'no-disponible', text: 'No disponible' }
+        ];
+        
+        basicAreas.forEach(area => {
+            const option = document.createElement('option');
+            option.value = area.value;
+            option.textContent = area.text;
+            this.areaSelect.appendChild(option);
+        });
+        
+        // Agregar áreas dinámicas
+        dynamicAreas.forEach(area => {
+            const option = document.createElement('option');
+            option.value = area.id;
+            option.textContent = area.name;
+            this.areaSelect.appendChild(option);
+        });
+    }
+
+    // Obtener áreas dinámicas desde localStorage
+    getDynamicAreas() {
+        const stored = localStorage.getItem('dynamicAreas');
+        return stored ? JSON.parse(stored) : [];
+    }
+
+    // Agregar nueva área dinámica
+    addDynamicArea(areaName) {
+        const dynamicAreas = this.getDynamicAreas();
+        const newArea = {
+            id: `dynamic-${Date.now()}`,
+            name: areaName,
+            createdAt: new Date().toISOString()
+        };
+        
+        dynamicAreas.push(newArea);
+        localStorage.setItem('dynamicAreas', JSON.stringify(dynamicAreas));
+        
+        // Recargar la lista de áreas
+        this.loadDynamicAreas();
+        
+        return newArea;
+    }
 }
 
 // Inicializar cuando el DOM esté listo
 document.addEventListener('DOMContentLoaded', () => {
-    new AreaSelectionScreen();
+    window.areaSelectionScreen = new AreaSelectionScreen();
 });
